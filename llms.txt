@@ -1,0 +1,59 @@
+# wiki-mcp
+
+> MCP server for markdown-based personal wikis with hybrid search (fulltext + semantic)
+
+## What this is
+
+wiki-mcp is an MCP (Model Context Protocol) server that lets AI assistants read, write, search, and manage a directory of markdown files as a personal wiki. It combines ripgrep full-text search with sentence-transformer embedding search, merged via Reciprocal Rank Fusion.
+
+## Tools provided
+
+- wiki_get(path, offset?, limit?) — read a file, with optional line pagination
+- wiki_get_batch(paths) — read multiple files at once
+- wiki_write(path, content) — create or overwrite a file; auto-indexes for search; validates [[wiki links]]
+- wiki_append(path, content) — append to an existing file
+- wiki_delete(path) — delete a file and remove from search index
+- wiki_list(dir?) — list .md files under a directory
+- wiki_search(query, mode?, dir?, k?) — search files; mode is "text", "semantic", or "hybrid" (default)
+- wiki_replace(old, new, dir?) — find and replace across wiki files
+- wiki_links(path) — parse [[links]] in a file and check if targets exist
+- wiki_resolve(name) — resolve a wiki link name to a file path
+
+## Search
+
+Three modes:
+- text: ripgrep search on file names and content
+- semantic: cosine similarity using all-MiniLM-L6-v2 embeddings in sqlite-vec
+- hybrid (default): both text and semantic, merged with RRF (k=60)
+
+Files under 10KB get one embedding. Larger files are split by H1/H2 headings, one embedding per section.
+
+## Setup
+
+Requires: Python 3.10+, ripgrep
+
+```json
+{
+  "mcpServers": {
+    "wiki": {
+      "command": "docker",
+      "args": ["run", "--rm", "-i", "-v", "/path/to/wiki:/wiki", "-e", "WIKI_PATH=/wiki", "wiki-mcp"]
+    }
+  }
+}
+```
+
+Environment variables:
+- WIKI_PATH (required): path to the wiki directory
+- WIKI_DB_PATH: sqlite-vec database path (default: {WIKI_PATH}/.wiki.db)
+- WIKI_EMBED_MODEL: embedding model (default: all-MiniLM-L6-v2)
+- WIKI_RG_PATH: ripgrep binary path (default: rg)
+- WIKI_CHUNK_THRESHOLD: chunking threshold in bytes (default: 10240)
+
+## Stack
+
+- Python MCP SDK (FastMCP)
+- ripgrep for full-text search
+- sqlite-vec for vector storage
+- sentence-transformers (all-MiniLM-L6-v2, 384-dim, CPU)
+- Reciprocal Rank Fusion for hybrid ranking

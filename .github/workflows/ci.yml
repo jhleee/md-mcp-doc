@@ -1,0 +1,56 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install ripgrep
+        run: sudo apt-get install -y ripgrep
+
+      - name: Install dependencies
+        run: |
+          pip install mcp sentence-transformers sqlite-vec python-frontmatter pytest
+
+      - name: Run tests
+        env:
+          WIKI_PATH: /tmp/wiki
+        run: |
+          mkdir -p /tmp/wiki
+          python -m pytest -v --tb=short
+
+  docker:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: docker build -t wiki-mcp .
+
+      - name: Smoke test
+        run: |
+          mkdir -p /tmp/test-wiki
+          echo "# Test" > /tmp/test-wiki/test.md
+          docker run --rm \
+            -v /tmp/test-wiki:/wiki \
+            -e WIKI_PATH=/wiki \
+            --entrypoint python \
+            wiki-mcp -c "
+          from core.index import reindex_all
+          stats = reindex_all()
+          assert stats['added'] == 1, f'Expected 1 added, got {stats}'
+          print('Docker smoke test passed')
+          "

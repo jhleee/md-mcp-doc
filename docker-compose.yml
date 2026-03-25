@@ -1,0 +1,10 @@
+services:
+  wiki-mcp:
+    build: .
+    container_name: wiki-mcp
+    volumes:
+      - ./test-wiki:/wiki
+    environment:
+      - WIKI_PATH=/wiki
+    stdin_open: true
+    stdout_open: true

@@ -1,0 +1,15 @@
+__pycache__/
+*.pyc
+.git/
+.gitignore
+*.egg-info/
+dist/
+build/
+.wiki.db
+test-wiki/
+.github/
+.pytest_cache/
+README.md
+llms.txt
+LICENSE
+docker-compose.yml

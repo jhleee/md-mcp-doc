@@ -1,0 +1,13 @@
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+.wiki.db
+.pytest_cache/
+*.sqlite
+*.sqlite3
+.env
+test-wiki/
+Dockerfile.test
