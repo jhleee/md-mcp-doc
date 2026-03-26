@@ -19,6 +19,10 @@ COPY tools/ tools/
 # Pre-download the embedding model at build time so startup is fast
 RUN python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('all-MiniLM-L6-v2')"
 
+# Use pre-downloaded model offline — no HF Hub requests at runtime
+ENV HF_HUB_OFFLINE=1
+ENV TRANSFORMERS_OFFLINE=1
+
 # Default wiki path (mount your vault here)
 ENV WIKI_PATH=/wiki
 ENV WIKI_TRANSPORT=stdio

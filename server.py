@@ -9,6 +9,10 @@ from mcp.server.fastmcp import FastMCP
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("wiki-mcp")
 
+# Silence noisy third-party loggers
+for _name in ("httpx", "httpcore", "huggingface_hub", "sentence_transformers", "transformers"):
+    logging.getLogger(_name).setLevel(logging.WARNING)
+
 mcp = FastMCP(
     "wiki",
     host=os.environ.get("WIKI_HOST", "0.0.0.0"),
@@ -212,7 +216,7 @@ def main() -> None:
 
     from core.index import reindex_all
 
-    logger.info("Starting wiki-mcp server...")
+    logger.info("Starting wiki-mcp server... (WIKI_PATH=%s)", config.WIKI_PATH)
     stats = reindex_all()
     logger.info(
         "Reindex complete: %d added, %d updated, %d removed",
