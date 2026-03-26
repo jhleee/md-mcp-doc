@@ -21,6 +21,26 @@ services:
       - WIKI_TRANSPORT=sse
       - WIKI_HOST=0.0.0.0
       - WIKI_PORT=8000
+      # Uncomment to enable Basic Auth:
+      # - WIKI_AUTH_USER=admin
+      # - WIKI_AUTH_PASS=changeme
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+
+  # SSE server mode with Basic Auth enabled
+  wiki-mcp-sse-auth:
+    build: .
+    container_name: wiki-mcp-sse-auth
+    volumes:
+      - ./test-wiki:/wiki
+    environment:
+      - WIKI_PATH=/wiki
+      - WIKI_TRANSPORT=sse
+      - WIKI_HOST=0.0.0.0
+      - WIKI_PORT=8000
+      - WIKI_AUTH_USER=${WIKI_AUTH_USER:-admin}
+      - WIKI_AUTH_PASS=${WIKI_AUTH_PASS:?WIKI_AUTH_PASS is required}
     ports:
       - "8000:8000"
     restart: unless-stopped
@@ -36,6 +56,26 @@ services:
       - WIKI_TRANSPORT=streamable-http
       - WIKI_HOST=0.0.0.0
       - WIKI_PORT=8000
+      # Uncomment to enable Basic Auth:
+      # - WIKI_AUTH_USER=admin
+      # - WIKI_AUTH_PASS=changeme
+    ports:
+      - "8001:8000"
+    restart: unless-stopped
+
+  # Streamable HTTP mode with Basic Auth enabled
+  wiki-mcp-http-auth:
+    build: .
+    container_name: wiki-mcp-http-auth
+    volumes:
+      - ./test-wiki:/wiki
+    environment:
+      - WIKI_PATH=/wiki
+      - WIKI_TRANSPORT=streamable-http
+      - WIKI_HOST=0.0.0.0
+      - WIKI_PORT=8000
+      - WIKI_AUTH_USER=${WIKI_AUTH_USER:-admin}
+      - WIKI_AUTH_PASS=${WIKI_AUTH_PASS:?WIKI_AUTH_PASS is required}
     ports:
       - "8001:8000"
     restart: unless-stopped

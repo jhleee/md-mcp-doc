@@ -140,6 +140,67 @@ python server.py [--transport stdio|sse|streamable-http] [--host 0.0.0.0] [--por
 - **`semantic`** — cosine similarity search using `all-MiniLM-L6-v2` embeddings stored in sqlite-vec
 - **`hybrid`** (default) — runs both, merges results with RRF (`k=60`)
 
+## Basic Authentication
+
+Basic Auth is available for SSE and streamable-http transports. Set both `WIKI_AUTH_USER` and `WIKI_AUTH_PASS` to enable it. stdio mode is unaffected.
+
+### Docker run
+
+```bash
+docker run -d --name wiki-mcp \
+  -v /path/to/your/wiki:/wiki \
+  -e WIKI_PATH=/wiki \
+  -e WIKI_TRANSPORT=sse \
+  -e WIKI_AUTH_USER=admin \
+  -e WIKI_AUTH_PASS=changeme \
+  -p 8000:8000 \
+  ghcr.io/jhleee/md-mcp-doc:latest
+```
+
+### Docker Compose
+
+```bash
+WIKI_AUTH_USER=admin WIKI_AUTH_PASS=changeme docker compose up wiki-mcp-sse-auth
+# or
+WIKI_AUTH_USER=admin WIKI_AUTH_PASS=changeme docker compose up wiki-mcp-http-auth
+```
+
+Or use a `.env` file:
+
+```bash
+# .env
+WIKI_AUTH_USER=admin
+WIKI_AUTH_PASS=changeme
+```
+
+```bash
+docker compose up wiki-mcp-sse-auth
+```
+
+### MCP client configuration with Basic Auth
+
+Encode `user:password` in base64 and pass it in the `Authorization` header:
+
+```bash
+echo -n "admin:changeme" | base64
+# → YWRtaW46Y2hhbmdlbWU=
+```
+
+```json
+{
+  "mcpServers": {
+    "wiki": {
+      "url": "http://localhost:8000/sse",
+      "headers": {
+        "Authorization": "Basic YWRtaW46Y2hhbmdlbWU="
+      }
+    }
+  }
+}
+```
+
+> **Note**: Basic Auth transmits credentials in base64 (not encrypted). Use HTTPS (e.g. via a reverse proxy such as nginx or Caddy) when exposing the server over a network.
+
 ## Environment Variables
 
 | Variable | Default | Description |
@@ -152,6 +213,8 @@ python server.py [--transport stdio|sse|streamable-http] [--host 0.0.0.0] [--por
 | `WIKI_TRANSPORT` | `stdio` | Transport mode: `stdio`, `sse`, or `streamable-http` |
 | `WIKI_HOST` | `0.0.0.0` | Bind host for SSE/HTTP modes |
 | `WIKI_PORT` | `8000` | Bind port for SSE/HTTP modes |
+| `WIKI_AUTH_USER` | *(disabled)* | Basic Auth username (requires `WIKI_AUTH_PASS`) |
+| `WIKI_AUTH_PASS` | *(disabled)* | Basic Auth password (requires `WIKI_AUTH_USER`) |
 
 ## Development
 
@@ -174,6 +237,7 @@ docker run --rm wiki-mcp-test
 wiki-mcp/
 ├── server.py           # MCP server entry point
 ├── config.py           # Environment variable configuration
+├── auth.py             # Basic Auth ASGI middleware
 ├── core/
 │   ├── embedder.py     # Sentence-transformers wrapper
 │   ├── vec_store.py    # sqlite-vec CRUD

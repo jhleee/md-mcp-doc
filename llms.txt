@@ -69,6 +69,12 @@ Environment variables:
 - WIKI_TRANSPORT: transport mode — stdio, sse, or streamable-http (default: stdio)
 - WIKI_HOST: bind host for sse/http modes (default: 0.0.0.0)
 - WIKI_PORT: bind port for sse/http modes (default: 8000)
+- WIKI_AUTH_USER: Basic Auth username; set together with WIKI_AUTH_PASS to enable auth (sse/http only)
+- WIKI_AUTH_PASS: Basic Auth password; set together with WIKI_AUTH_USER to enable auth (sse/http only)
+
+## Basic Authentication
+
+Set WIKI_AUTH_USER and WIKI_AUTH_PASS to enable HTTP Basic Auth on sse or streamable-http transports. stdio is unaffected. Credentials are compared in constant time. Use HTTPS (reverse proxy) when exposing over a network.
 
 ## Stack
 

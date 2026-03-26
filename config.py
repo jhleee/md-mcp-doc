@@ -15,6 +15,11 @@ RG_PATH: str = os.environ.get("WIKI_RG_PATH", "rg")
 
 CHUNK_THRESHOLD: int = int(os.environ.get("WIKI_CHUNK_THRESHOLD", str(10 * 1024)))
 
+# Basic authentication credentials for SSE / streamable-http transports.
+# Both must be set to enable auth; if either is empty, auth is disabled.
+AUTH_USER: str = os.environ.get("WIKI_AUTH_USER", "")
+AUTH_PASS: str = os.environ.get("WIKI_AUTH_PASS", "")
+
 
 def validate() -> None:
     """Validate config at server startup. Call this from server.py main()."""

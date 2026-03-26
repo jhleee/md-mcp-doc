@@ -177,6 +177,36 @@ def wiki_resolve(name: str) -> dict:
     return resolve_link(name)
 
 
+# ── Auth ────────────────────────────────────────────────────
+
+
+def _run_with_basic_auth(transport: str, auth_user: str, auth_pass: str) -> None:
+    """Run SSE or streamable-http with Basic Auth middleware injected."""
+    import anyio
+    import uvicorn
+
+    from auth import BasicAuthMiddleware
+
+    async def _serve() -> None:
+        if transport == "sse":
+            app = mcp.sse_app()
+        else:
+            app = mcp.streamable_http_app()
+
+        app.add_middleware(BasicAuthMiddleware, username=auth_user, password=auth_pass)
+
+        cfg = uvicorn.Config(
+            app,
+            host=mcp.settings.host,
+            port=mcp.settings.port,
+            log_level=mcp.settings.log_level.lower(),
+        )
+        server = uvicorn.Server(cfg)
+        await server.serve()
+
+    anyio.run(_serve)
+
+
 # ── Startup ─────────────────────────────────────────────────
 
 
@@ -233,7 +263,12 @@ def main() -> None:
             mcp.settings.port,
             transport,
         )
-    mcp.run(transport=transport)
+
+    if transport in ("sse", "streamable-http") and config.AUTH_USER and config.AUTH_PASS:
+        logger.info("Basic authentication enabled (user=%s)", config.AUTH_USER)
+        _run_with_basic_auth(transport, config.AUTH_USER, config.AUTH_PASS)
+    else:
+        mcp.run(transport=transport)
 
 
 if __name__ == "__main__":
