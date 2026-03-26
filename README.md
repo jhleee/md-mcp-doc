@@ -9,13 +9,14 @@ MCP server for a markdown-based personal wiki. Provides CRUD, full-text search (
 - **Auto-indexing**: writes and deletes automatically update the vector index
 - **`[[wiki links]]`**: parse, resolve (shortest-path matching), and validate links across the vault
 - **Chunked embeddings**: files < 10KB get a single vector; larger files are split by H1/H2 headings
+- **3 transport modes**: stdio (default), SSE, streamable-http — run as a local process or a network server
 
 ## Quick Start
 
-### Docker (recommended)
+### Docker — stdio mode (default)
 
 ```bash
-docker build -t wiki-mcp .
+docker pull ghcr.io/jhleee/md-mcp-doc:latest
 ```
 
 MCP client configuration (`claude_desktop_config.json`):
@@ -29,14 +30,70 @@ MCP client configuration (`claude_desktop_config.json`):
         "run", "--rm", "-i",
         "-v", "/path/to/your/wiki:/wiki",
         "-e", "WIKI_PATH=/wiki",
-        "wiki-mcp"
+        "ghcr.io/jhleee/md-mcp-doc:latest"
       ]
     }
   }
 }
 ```
 
-### uvx (local install)
+### Docker — SSE server mode
+
+Run as a persistent HTTP server, connect from any MCP client via SSE:
+
+```bash
+docker run -d --name wiki-mcp \
+  -v /path/to/your/wiki:/wiki \
+  -e WIKI_PATH=/wiki \
+  -e WIKI_TRANSPORT=sse \
+  -p 8000:8000 \
+  ghcr.io/jhleee/md-mcp-doc:latest
+```
+
+MCP client configuration (SSE):
+
+```json
+{
+  "mcpServers": {
+    "wiki": {
+      "url": "http://localhost:8000/sse"
+    }
+  }
+}
+```
+
+### Docker — Streamable HTTP mode
+
+```bash
+docker run -d --name wiki-mcp \
+  -v /path/to/your/wiki:/wiki \
+  -e WIKI_PATH=/wiki \
+  -e WIKI_TRANSPORT=streamable-http \
+  -p 8000:8000 \
+  ghcr.io/jhleee/md-mcp-doc:latest
+```
+
+```json
+{
+  "mcpServers": {
+    "wiki": {
+      "url": "http://localhost:8000/mcp"
+    }
+  }
+}
+```
+
+### Docker Compose
+
+```bash
+# SSE server mode
+docker compose up wiki-mcp-sse
+
+# Streamable HTTP mode
+docker compose up wiki-mcp-http
+```
+
+### Local install (stdio)
 
 ```bash
 pip install mcp sentence-transformers sqlite-vec python-frontmatter
@@ -54,6 +111,12 @@ pip install mcp sentence-transformers sqlite-vec python-frontmatter
     }
   }
 }
+```
+
+### CLI options
+
+```
+python server.py [--transport stdio|sse|streamable-http] [--host 0.0.0.0] [--port 8000]
 ```
 
 ## Tools
@@ -86,6 +149,9 @@ pip install mcp sentence-transformers sqlite-vec python-frontmatter
 | `WIKI_EMBED_MODEL` | `all-MiniLM-L6-v2` | Sentence-transformers model name |
 | `WIKI_RG_PATH` | `rg` | Path to ripgrep binary |
 | `WIKI_CHUNK_THRESHOLD` | `10240` | File size threshold (bytes) for heading-based chunking |
+| `WIKI_TRANSPORT` | `stdio` | Transport mode: `stdio`, `sse`, or `streamable-http` |
+| `WIKI_HOST` | `0.0.0.0` | Bind host for SSE/HTTP modes |
+| `WIKI_PORT` | `8000` | Bind port for SSE/HTTP modes |
 
 ## Development
 

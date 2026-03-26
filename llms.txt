@@ -30,17 +30,34 @@ Files under 10KB get one embedding. Larger files are split by H1/H2 headings, on
 
 ## Setup
 
-Requires: Python 3.10+, ripgrep
+Requires: Python 3.10+, ripgrep. Docker image: ghcr.io/jhleee/md-mcp-doc
 
+### stdio mode (default)
 ```json
 {
   "mcpServers": {
     "wiki": {
       "command": "docker",
-      "args": ["run", "--rm", "-i", "-v", "/path/to/wiki:/wiki", "-e", "WIKI_PATH=/wiki", "wiki-mcp"]
+      "args": ["run", "--rm", "-i", "-v", "/path/to/wiki:/wiki", "-e", "WIKI_PATH=/wiki", "ghcr.io/jhleee/md-mcp-doc"]
     }
   }
 }
+```
+
+### SSE server mode
+```bash
+docker run -d -v /path/to/wiki:/wiki -e WIKI_PATH=/wiki -e WIKI_TRANSPORT=sse -p 8000:8000 ghcr.io/jhleee/md-mcp-doc
+```
+```json
+{ "mcpServers": { "wiki": { "url": "http://localhost:8000/sse" } } }
+```
+
+### Streamable HTTP mode
+```bash
+docker run -d -v /path/to/wiki:/wiki -e WIKI_PATH=/wiki -e WIKI_TRANSPORT=streamable-http -p 8000:8000 ghcr.io/jhleee/md-mcp-doc
+```
+```json
+{ "mcpServers": { "wiki": { "url": "http://localhost:8000/mcp" } } }
 ```
 
 Environment variables:
@@ -49,6 +66,9 @@ Environment variables:
 - WIKI_EMBED_MODEL: embedding model (default: all-MiniLM-L6-v2)
 - WIKI_RG_PATH: ripgrep binary path (default: rg)
 - WIKI_CHUNK_THRESHOLD: chunking threshold in bytes (default: 10240)
+- WIKI_TRANSPORT: transport mode — stdio, sse, or streamable-http (default: stdio)
+- WIKI_HOST: bind host for sse/http modes (default: 0.0.0.0)
+- WIKI_PORT: bind port for sse/http modes (default: 8000)
 
 ## Stack
 

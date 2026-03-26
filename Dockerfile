@@ -21,7 +21,11 @@ RUN python -c "from sentence_transformers import SentenceTransformer; SentenceTr
 
 # Default wiki path (mount your vault here)
 ENV WIKI_PATH=/wiki
+ENV WIKI_TRANSPORT=stdio
+ENV WIKI_HOST=0.0.0.0
+ENV WIKI_PORT=8000
 
 VOLUME /wiki
+EXPOSE 8000
 
 ENTRYPOINT ["python", "server.py"]

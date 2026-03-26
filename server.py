@@ -1,14 +1,19 @@
 from __future__ import annotations
 
+import argparse
 import logging
-from pathlib import Path
+import os
 
 from mcp.server.fastmcp import FastMCP
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("wiki-mcp")
 
-mcp = FastMCP("wiki")
+mcp = FastMCP(
+    "wiki",
+    host=os.environ.get("WIKI_HOST", "0.0.0.0"),
+    port=int(os.environ.get("WIKI_PORT", "8000")),
+)
 
 
 # ── CRUD tools ──────────────────────────────────────────────
@@ -171,9 +176,39 @@ def wiki_resolve(name: str) -> dict:
 # ── Startup ─────────────────────────────────────────────────
 
 
+def _parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="wiki-mcp server")
+    parser.add_argument(
+        "--transport",
+        choices=["stdio", "sse", "streamable-http"],
+        default=os.environ.get("WIKI_TRANSPORT", "stdio"),
+        help="MCP transport mode (default: stdio, env: WIKI_TRANSPORT)",
+    )
+    parser.add_argument(
+        "--host",
+        default=None,
+        help="Bind host for sse/streamable-http (env: WIKI_HOST, default: 0.0.0.0)",
+    )
+    parser.add_argument(
+        "--port",
+        type=int,
+        default=None,
+        help="Bind port for sse/streamable-http (env: WIKI_PORT, default: 8000)",
+    )
+    return parser.parse_args()
+
+
 def main() -> None:
     import config
     config.validate()
+
+    args = _parse_args()
+
+    # Override host/port if provided via CLI
+    if args.host:
+        mcp.settings.host = args.host
+    if args.port:
+        mcp.settings.port = args.port
 
     from core.index import reindex_all
 
@@ -185,7 +220,16 @@ def main() -> None:
         stats["updated"],
         stats["removed"],
     )
-    mcp.run()
+
+    transport = args.transport
+    if transport in ("sse", "streamable-http"):
+        logger.info(
+            "Listening on %s:%d (%s)",
+            mcp.settings.host,
+            mcp.settings.port,
+            transport,
+        )
+    mcp.run(transport=transport)
 
 
 if __name__ == "__main__":

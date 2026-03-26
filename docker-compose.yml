@@ -1,4 +1,5 @@
 services:
+  # stdio mode (default) — for direct MCP client piping
   wiki-mcp:
     build: .
     container_name: wiki-mcp
@@ -8,3 +9,33 @@ services:
       - WIKI_PATH=/wiki
     stdin_open: true
     stdout_open: true
+
+  # SSE server mode — access via http://localhost:8000/sse
+  wiki-mcp-sse:
+    build: .
+    container_name: wiki-mcp-sse
+    volumes:
+      - ./test-wiki:/wiki
+    environment:
+      - WIKI_PATH=/wiki
+      - WIKI_TRANSPORT=sse
+      - WIKI_HOST=0.0.0.0
+      - WIKI_PORT=8000
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+
+  # Streamable HTTP mode — access via http://localhost:8001/mcp
+  wiki-mcp-http:
+    build: .
+    container_name: wiki-mcp-http
+    volumes:
+      - ./test-wiki:/wiki
+    environment:
+      - WIKI_PATH=/wiki
+      - WIKI_TRANSPORT=streamable-http
+      - WIKI_HOST=0.0.0.0
+      - WIKI_PORT=8000
+    ports:
+      - "8001:8000"
+    restart: unless-stopped
